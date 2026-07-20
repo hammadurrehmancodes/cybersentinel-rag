@@ -1,0 +1,171 @@
+{
+  "version": "1.0",
+  "description": "CyberSentinel log pattern signatures for attack detection",
+  "patterns": [
+    {
+      "id": "LP-001",
+      "attack_type": "brute_force_ssh",
+      "name": "SSH Brute Force Attack",
+      "description": "Repeated failed authentication attempts targeting SSH service on port 22. Attacker is systematically trying username and password combinations.",
+      "log_indicators": [
+        "Multiple 'Failed password for' entries from same source IP in short time window",
+        "Multiple 'Invalid user' entries from same source IP",
+        "'error: maximum authentication attempts exceeded' from same source IP",
+        "Linux auth.log entries showing repeated failures followed by account lockout"
+      ],
+      "windows_event_ids": ["4625", "4648", "4740"],
+      "thresholds": {
+        "suspicious": "5 failures in 60 seconds",
+        "likely_attack": "20 failures in 300 seconds",
+        "confirmed_attack": "100 failures in 3600 seconds"
+      },
+      "affected_ports": [22],
+      "severity_default": "high",
+      "response_category": "brute_force"
+    },
+    {
+      "id": "LP-002",
+      "attack_type": "brute_force_rdp",
+      "name": "RDP Brute Force Attack",
+      "description": "Repeated failed authentication attempts targeting Remote Desktop Protocol on port 3389. Common attack vector for ransomware deployment.",
+      "log_indicators": [
+        "Multiple failed RDP connection attempts from same IP",
+        "Windows Event ID 4625 with Logon Type 10 (RemoteInteractive)",
+        "Multiple DROP rules triggered for port 3389 from same source"
+      ],
+      "windows_event_ids": ["4625", "4740", "4776"],
+      "thresholds": {
+        "suspicious": "3 failures in 60 seconds",
+        "likely_attack": "10 failures in 300 seconds",
+        "confirmed_attack": "50 failures in 3600 seconds"
+      },
+      "affected_ports": [3389],
+      "severity_default": "critical",
+      "response_category": "brute_force"
+    },
+    {
+      "id": "LP-003",
+      "attack_type": "port_scan_aggressive",
+      "name": "Aggressive Port Scan",
+      "description": "Automated scanning of many ports in rapid succession. Indicates attacker is mapping your attack surface using tools like Nmap or Masscan.",
+      "log_indicators": [
+        "Same source IP connecting to more than 20 different destination ports within 60 seconds",
+        "SYN packets to sequential port numbers without completing handshake",
+        "Multiple BLOCK/DROP entries for same source IP across diverse destination ports"
+      ],
+      "thresholds": {
+        "suspicious": "20 different ports in 60 seconds",
+        "likely_attack": "100 different ports in 300 seconds",
+        "confirmed_attack": "500 different ports in 3600 seconds"
+      },
+      "affected_ports": [],
+      "severity_default": "medium",
+      "response_category": "port_scan"
+    },
+    {
+      "id": "LP-004",
+      "attack_type": "port_scan_stealth",
+      "name": "Stealth Port Scan (Low and Slow)",
+      "description": "Slow, deliberate port scanning spread over hours to avoid rate-based detection. Harder to detect but still discoverable via IP-based correlation.",
+      "log_indicators": [
+        "Same source IP appearing across many different ports spread over hours",
+        "Low frequency of connections but high diversity of destination ports from same IP",
+        "Connection attempts at irregular intervals to avoid pattern detection"
+      ],
+      "thresholds": {
+        "suspicious": "20 different ports from same IP over 24 hours",
+        "confirmed_attack": "50 different ports from same IP over 24 hours"
+      },
+      "affected_ports": [],
+      "severity_default": "medium",
+      "response_category": "port_scan"
+    },
+    {
+      "id": "LP-005",
+      "attack_type": "sensitive_port_probe",
+      "name": "Sensitive Service Port Probe",
+      "description": "Targeted connection attempt to a sensitive or dangerous port. Even a single probe to certain ports warrants investigation.",
+      "log_indicators": [
+        "Any connection attempt to database ports from external IPs: 3306, 5432, 1433, 27017, 6379, 1521",
+        "Connection attempt to admin or management ports: 8080, 8443, 9200, 4848",
+        "Connection attempt to legacy dangerous protocols: Telnet (23), FTP (21), SNMP (161)"
+      ],
+      "sensitive_ports": {
+        "22": "SSH - remote administration",
+        "23": "Telnet - unencrypted remote admin, should never be exposed",
+        "21": "FTP - unencrypted file transfer",
+        "25": "SMTP - mail server",
+        "53": "DNS - domain name service",
+        "445": "SMB - Windows file sharing, common ransomware vector",
+        "1433": "Microsoft SQL Server",
+        "1521": "Oracle Database",
+        "3306": "MySQL/MariaDB",
+        "3389": "RDP - Windows Remote Desktop",
+        "5432": "PostgreSQL",
+        "5900": "VNC - remote desktop, often unauthenticated",
+        "6379": "Redis - often has no authentication by default",
+        "8080": "HTTP alternate - often admin panels",
+        "8443": "HTTPS alternate - often admin panels",
+        "9200": "Elasticsearch - often unauthenticated",
+        "27017": "MongoDB - often unauthenticated"
+      },
+      "severity_default": "medium",
+      "response_category": "sensitive_port_access"
+    },
+    {
+      "id": "LP-006",
+      "attack_type": "data_exfiltration",
+      "name": "Potential Data Exfiltration",
+      "description": "Large or unusual outbound data transfer suggesting sensitive data may be leaving the network without authorization.",
+      "log_indicators": [
+        "Outbound data transfer significantly exceeding baseline for that system or user",
+        "Large file transfers to previously unseen external IP addresses",
+        "Outbound traffic to cloud storage services from systems that do not normally use them",
+        "DNS queries for unusually long domain names suggesting DNS tunneling",
+        "Outbound connections on non-standard ports carrying large payloads"
+      ],
+      "thresholds": {
+        "review": "Outbound transfer greater than 100MB in single session to new destination",
+        "alert": "Outbound transfer greater than 500MB in single session",
+        "critical": "Outbound transfer greater than 1GB or transfer to known threat actor infrastructure"
+      },
+      "severity_default": "high",
+      "response_category": "data_exfiltration"
+    },
+    {
+      "id": "LP-007",
+      "attack_type": "repeated_blocked",
+      "name": "Repeated Blocked Connection Attempts",
+      "description": "Single source IP being blocked many times. May indicate a persistent attacker, misconfigured system, or compromised device attempting to connect.",
+      "log_indicators": [
+        "More than 20 BLOCK or DROP entries for same source IP in firewall logs",
+        "Repeated connection attempts from same IP after being blocked",
+        "Same IP targeting multiple internal destination IPs"
+      ],
+      "thresholds": {
+        "suspicious": "20 blocked attempts in any time window",
+        "high": "100 blocked attempts in any time window",
+        "critical": "500 blocked attempts or spread across multiple destination IPs"
+      },
+      "severity_default": "medium",
+      "response_category": "repeated_blocked"
+    },
+    {
+      "id": "LP-008",
+      "attack_type": "credential_stuffing",
+      "name": "Credential Stuffing Attack",
+      "description": "Attacker using lists of breached username and password pairs to attempt access. Differs from brute force in that each attempt uses a different username.",
+      "log_indicators": [
+        "Failed login attempts targeting many different usernames from same source IP",
+        "Failed attempts across multiple accounts using common passwords",
+        "Login attempts using email addresses as usernames from single IP"
+      ],
+      "thresholds": {
+        "suspicious": "Failed attempts against 5 different usernames from same IP",
+        "confirmed": "Failed attempts against 20 different usernames from same IP"
+      },
+      "severity_default": "high",
+      "response_category": "brute_force"
+    }
+  ]
+}

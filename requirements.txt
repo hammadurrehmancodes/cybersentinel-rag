@@ -1,0 +1,29 @@
+# CyberSentinel — Python Dependencies
+# Install: pip install -r requirements.txt
+
+# ── Web Framework ──────────────────────────────
+fastapi==0.115.0
+uvicorn==0.30.6
+#pydantic==2.9.2
+
+# ── Environment ────────────────────────────────
+python-dotenv==1.0.1
+requests==2.32.3
+
+# ── Vector Database (local, no server needed) ──
+chromadb==0.5.18
+
+# ── Embeddings (local, free, no API key) ───────
+sentence-transformers==3.3.1
+
+# ── LLM Provider ───────────────────────────────
+# Groq gives free 14,400 requests/day
+# No langchain needed — we call Groq REST API directly
+
+# ── PDF Reports ────────────────────────────────
+reportlab==4.2.5
+
+# ── Data / ML (already in your FYP) ───────────
+numpy
+pandas
+scikit-learn

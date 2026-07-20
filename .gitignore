@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+
+# Virtual environment
+.venv/
+venv/
+ENV/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Local database and generated artifacts
+chroma_storage/
+*.sqlite3
+*.pdf
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
